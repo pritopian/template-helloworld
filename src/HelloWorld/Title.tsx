@@ -1,58 +1,67 @@
-import React from 'react';
-import {spring, useCurrentFrame, useVideoConfig} from 'remotion';
-import {FONT_FAMILY} from './constants';
+import { spring, useCurrentFrame, useVideoConfig } from 'remotion';
+import { FONT_FAMILY } from './constants';
+import React, { useEffect } from 'react';  // Added useEffect import
 
 const title: React.CSSProperties = {
-	fontFamily: FONT_FAMILY,
-	fontWeight: 'bold',
-	fontSize: 100,
-	textAlign: 'center',
-	position: 'absolute',
-	bottom: 160,
-	width: '100%',
+    fontFamily: FONT_FAMILY,
+    fontWeight: 'bold',
+    fontSize: 100,
+    textAlign: 'center',
+    // color will be overridden by prop
 };
 
-const word: React.CSSProperties = {
-	marginLeft: 10,
-	marginRight: 10,
+const wordStyle: React.CSSProperties = {
 	display: 'inline-block',
+	marginRight: '15px',  // Adjust the margin value as needed
 };
 
-export const Title: React.FC<{
+interface TitleProps {
 	titleText: string;
 	titleColor: string;
-}> = ({titleText, titleColor}) => {
+	onComplete: (duration: number) => void;
+}
+
+export const Title: React.FC<TitleProps> = ({ titleText, titleColor, onComplete }) => {
 	const videoConfig = useVideoConfig();
 	const frame = useCurrentFrame();
-
 	const words = titleText.split(' ');
 
-	return (
-		<h1 style={title}>
-			{words.map((t, i) => {
-				const delay = i * 5;
+	// Calculate the total duration of the title animation
+	const totalDuration = words.length * 10;  // Assuming a delay of 10 frames per word
 
-				const scale = spring({
-					fps: videoConfig.fps,
-					frame: frame - delay,
-					config: {
-						damping: 200,
-					},
-				});
+	// Call onComplete when the title animation is done
+	useEffect(() => {
+			if (frame >= totalDuration) {
+					onComplete(totalDuration);
+			}
+	}, [frame, totalDuration, onComplete]);
 
-				return (
-					<span
-						key={t}
-						style={{
-							...word,
-							color: titleColor,
-							transform: `scale(${scale})`,
-						}}
-					>
-						{t}
-					</span>
-				);
-			})}
-		</h1>
+		return (
+			<h1 style={{ ...title, color: titleColor }}>
+					{words.map((word, index) => {
+							const delay = index * 10;  // Adjust the delay value as needed
+							const springValue = spring({
+									fps: videoConfig.fps,
+									frame: frame - delay,
+									config: {
+											stiffness: 100,  // Adjust the stiffness as needed
+											damping: 20,     // Adjust the damping as needed
+											mass: 0.5,       // Adjust the mass as needed
+									},
+							});
+	
+							return (
+									<span
+											key={index}
+											style={{
+													...wordStyle,
+													transform: `scale(${springValue})`,
+											}}
+									>
+											{word}{' '} {/* Added a space after each word */}
+									</span>
+							);
+					})}
+			</h1>
 	);
-};
+				}	
